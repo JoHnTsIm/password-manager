@@ -8,6 +8,7 @@ from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from getpass import getpass
+import re
 
 ################### data ####################
 """class that stores logged in user's info"""
@@ -21,7 +22,7 @@ class currentUser:
 
 
 
-"""creates connection to the database"""
+# Create a SQLite database connection.
 def connectToDatabase(databaseFile : str):
     try:
         connection = sqlite3.connect(databaseFile)
@@ -29,7 +30,8 @@ def connectToDatabase(databaseFile : str):
     except Error as error:
         print(f"ERROR: {error}")
 
-"""creates query cursor using connection to the database"""
+
+# Creates a new SQLite3 cursor.
 def createCursor(connection : sqlite3.Connection):
     try:
         cursor = connection.cursor()
@@ -37,7 +39,8 @@ def createCursor(connection : sqlite3.Connection):
     except Error as error:
         print(f"ERROR: {error}")
 
-"""creates needed tables if they are not existed to the database"""
+
+# Create tables if they do not exist.
 def createTables(cursor : sqlite3.Cursor):
     try:
         cursor.execute("""CREATE TABLE IF NOT EXISTS users(
@@ -60,21 +63,24 @@ def createTables(cursor : sqlite3.Cursor):
     except Error as error:
         print(f"ERROR: {error}")
 
-"""closes the connection to the database"""
+
+# Close a sqlite3 connection.
 def closeConnection(connection: sqlite3.Connection):
     try:
         connection.close()
     except Error as error:
         print(f"ERROR: {error}")
 
-"""hashes messages, here hashes user password"""
+
+# Returns a password hashing for a message.
 def hashing(message : str):
     '''ARGON 2'''
     ph = PasswordHasher()
     hashed_message = ph.hash(message)
     return hashed_message
 
-"""does a query to the database and gets/returns user's password"""
+
+# Get a user s password.
 def getUserPassword(username: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -86,8 +92,8 @@ def getUserPassword(username: str):
         return password
     else:
         return None
-    
-"""does a query to the database and gets/returns user's id"""
+     
+# Returns the id of the user with the given username
 def getUserId(username: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -100,7 +106,8 @@ def getUserId(username: str):
     else:
         return None
     
-"""gets all the rows of the user entries"""
+
+# Fetch all passwords.
 def getAll():
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -111,7 +118,7 @@ def getAll():
     
     return result
 
-"""gets all the id's of the user entries"""
+# Returns a list of password ids.
 def getIds():
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -121,7 +128,8 @@ def getIds():
         FROM passwords WHERE userid=:1""", [currentUser.id]).fetchall()
     return result
 
-"""compares a hash with a plain text, here compares the hashed password with the plain text one"""
+
+# Verify a plain password against a hash
 def compareHashPlain(hash: str, plainPassword: str):
     ph = PasswordHasher()
     if hash != None:
@@ -130,77 +138,98 @@ def compareHashPlain(hash: str, plainPassword: str):
         except exceptions.VerifyMismatchError as error:
             print(f"ERROR: {error}")
 
-"""gets a list of strings and looks inside to see if any string has length 0"""
+# Check if a list of inputs is empty.
 def checkEmpty(inputs: list):
     for input in inputs:
         if len(input) == 0:
             print(
-                "\n----------------------\nempty required field!\n----------------------")
+                "\n----------------------\nEmpty required field\n----------------------\n")
             return True
     else:
         return False
 
-"""gets a string and a list with the allowed characters and checks if any of the characters of the string is not in the list"""
+# Returns a boolean indicating if a character is allowed in a string.
 def checkNotAllowedCharacter(string: str, allowedChars: list):
     for char in string:
         if char not in allowedChars:
             return True     
         else:
             return False
+        
+# Check if an email address is valid.
+def checkEmail(email: str):
+    regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
+    if (re.fullmatch(regex, email)):
+        return True
+    else:
+        print("\n--------------\nInvalid Email\n--------------\n")
+        return False
 
-"""asks the user to type his info to login"""
+# Check if a password matches a confirm password.
+def checkPasswords(password: str, confirmPassword: str):
+    if password != confirmPassword:
+        print("\n---------------------------\nPasswords does not match\n---------------------------\n")
+        return False
+    else:
+        return True
+
+
+# Displays the login menu.
 def login():
     username = str(input("username(required): "))
     hashedPassword = getUserPassword(username)
     id = getUserId(username)
     dataInput = [username]
 
-    emptyField = checkEmpty(dataInput)
-    if emptyField:
+    if checkEmpty(dataInput):
         menu()
-    elif hashedPassword == None:
-        print("\n---------------------\nusername doesn't exists\n---------------------\n")
-        login()
     else:
-        password = str(getpass("password(required): "))
-        passwordCheck =  compareHashPlain(hashedPassword, password)
-        if passwordCheck == None:
-            print("\n---------------------\nwrong password\n---------------------\n")
-            login()
+        if hashedPassword == None:
+            print(
+                "\n-------------------------\nUsername doesn't exist\n-------------------------\n")
+            menu()
+        else:
+            password = str(getpass("password(required): "))
+            passwordCheck =  compareHashPlain(hashedPassword, password)
+            if passwordCheck == None:
+                print("\n---------------------\nWrong password\n---------------------\n")
+                menu()
 
-        currentUser.id = id
-        currentUser.username = username
-        currentUser.password = password
-        loadPasswords()
-        loggedInMenu()
+            currentUser.id = id
+            currentUser.username = username
+            currentUser.password = password
+            loadPasswords()
+            print(
+                "\n----------------------\nLogged in successful\n----------------------\n")
+            loggedInMenu()
 
-"""asks the user to type his info to register"""
+# Registers a new user.
 def register():
     username = str(input("username(required): "))
     password = str(getpass("password(required): ")) # str(input("password(required): "))
     confirmPassword = str(getpass("confirm password(required): ")) # str(input("confirm password(required): "))
     dataInput = [username, password, confirmPassword]
 
-    emptyField = checkEmpty(dataInput)
-    if emptyField:
+    if checkEmpty(dataInput):
         menu()
-
-    if password != confirmPassword:
-        print("\n---------------------------\npasswords does not match\n---------------------------")
-        register()
     else:
-        insertRowToUsersTable(username, hashing(password))
-        menu()
+        if checkPasswords(password, confirmPassword) == False:
+            menu()
+        else:
+            insertRowToUsersTable(username, hashing(password))
+            print("\n-------------------\nSigned up successful\n-------------------\n")
+            menu()
 
-"""logs out the current logged in user"""
+# Logout the current user.
 def logout():
     currentUser.id = None
     currentUser.username = None
     currentUser.password = None
+    currentUser.entries = []
     os.system("cls")
     menu()
 
-"""inserts a new row to the table users with user's info"""
+# Inserts a row to the users table.
 def insertRowToUsersTable(username : str, password: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -213,13 +242,13 @@ def insertRowToUsersTable(username : str, password: str):
     except Error as error:
         print(f"ERROR: {error}")
 
-"""outputs a menu and waits for the user to choose an operation"""
+# Displays the pre - login menu.
 def menu():
     operation = str(input
-                    ("\nPre-login Menu\n-------------------\n(1) login\n(2) register\nor leave empty to exit\n\nchoose an operation:"))
+                    ("\nPre-login Menu\n-------------------\n(1) Login\n(2) Sign up\nor leave empty to exit\n\nchoose an operation:"))
 
     if operation not in ["1", "2"] and operation != "":
-        print("\n---------------------\nnot valid operation\n---------------------")
+        print("\n---------------------\nNot valid operation\n---------------------")
         menu()
         operation = None
     else:
@@ -228,13 +257,13 @@ def menu():
         elif operation == "2":
             register()
 
-"""outputs a menu and waits for the logged in user to choose an operation"""
+# Logs in then displays the logged in menu.
 def loggedInMenu():
     operation = str(input
-                    ("\nLogged in Menu\n-------------------\n(1) show profile\n(2) show password entries\n(3) add password entry\n(4) remove password entry\n(5) logout\nor leave empty to exit\n\nchoose an operation:"))
+                    ("\nLogged in Menu\n-------------------\n(1) Show profile\n(2) Show password entries\n(3) Add password entry\n(4) Remove password entry\n(5) Logout\nor leave empty to exit\n\nchoose an operation:"))
 
     if operation not in ["1", "2", "3", "4", "5"] and operation != "":
-        print("\n---------------------\nnot valid operation\n---------------------")
+        print("\n---------------------\nNot valid operation\n---------------------")
         loggedInMenu()
         operation = None
     elif operation == "5":
@@ -250,14 +279,14 @@ def loggedInMenu():
             removeEntry()
         loggedInMenu()
             
-"""outputs current logged in user's info"""
+# Displays information about current user.
 def showUserInfo():
-    print("\n\nYour Profile\n---------------------------------------------------")
+    print("\n\nYour profile\n---------------------------------------------------")
     print(f"username: {currentUser.username}")
     print("---------------------------------------------------\n")
 
-"""inserts a new row to the table passwords with entry info"""
-def insertRowToEntries(username : str, email : str, password : str, websiteApp: str):
+# Inserts a row to passwords.
+def insertRowToPasswords(username : str, email : str, password : str, websiteApp: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
 
@@ -269,7 +298,7 @@ def insertRowToEntries(username : str, email : str, password : str, websiteApp: 
     except Error as error:
         print(f"ERROR: {error}")
 
-"""gets and id and removes the row with this specific id from the table"""
+# Removes a row from passwords.
 def removeRowFromEntries(id: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -281,34 +310,38 @@ def removeRowFromEntries(id: str):
     except Error as error:
         print(f"ERROR: {error}")
 
-"""asks the user to give a username, email, password and a website or an app and inserts a new row to the table"""
+# adds new entry to the passwords.
 def addEntry():
     username = str(input("username: "))
     email = str(input("email(required): "))
-    password = str(getpass("password(required): ")) # str(input("password(required): "))
+    password = str(getpass("password(required): "))
+    confirmPassword = str(getpass("Confirm password(required): "))
     websiteApp = str(input("website/App(required): "))
 
     dataInput = [email, password, websiteApp]
 
-    emptyField = checkEmpty(dataInput)
-    if emptyField:
+    if checkEmpty(dataInput):
         loggedInMenu()
+    else:
+        if checkEmail(email) == False:
+            loggedInMenu()
+        elif checkPasswords(password, confirmPassword) == False:
+            loggedInMenu()
 
 
-    insertRowToEntries(encryptMessage(username), encryptMessage(
+    insertRowToPasswords(encryptMessage(username), encryptMessage(
         email), encryptMessage(password), encryptMessage(websiteApp))
     currentUser.entries.append((username, email, password, websiteApp))
-    print("Entry added successfully")
     
-    # after insert
     username = None
     email = None
     password = None
     websiteApp = None
-    #
-    print("\n----------------------------\nnew entry added successfully\n----------------------------\n")
 
-"""outpus all the current logged in user entries and waits for user input to remove a specific row"""
+    print("\n----------------------------\nNew entry added successfully\n----------------------------\n")
+
+
+# Removes the current entry from the passwords.
 def removeEntry():
     idList = []
     iDs = list(getIds())
@@ -320,30 +353,27 @@ def removeEntry():
     isNotAllowed = checkNotAllowedCharacter(userInputId, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ""])
 
     if isNotAllowed:
-        print("\n\n---------------------------------------\none or more characters is not allowed\n---------------------------------------\n")
-        removeEntry()
+        print("\n\n---------------------------------------\nOne or more characters is not allowed\n---------------------------------------\n")
+        loggedInMenu()
     elif userInputId not in idList:
         if userInputId != "":
-            print("\n\n------------------\ninvalid entry\n------------------\n")
+            print("\n\n------------------\nInvalid entry\n------------------\n")
     else:
         removeRowFromEntries(userInputId)
-        print("\n\n---------------------------------------\nentry removed successfully\n---------------------------------------\n")
+        print("\n\n---------------------------------------\nEntry removed successfully\n---------------------------------------\n")
 
-"""does a for loop in a list and outputs all the current logged in user entries"""
+# Display the current user entries.
 def showCurrentEntries():
     entriesArray = currentUser.entries
-    print("\n\nYour Entries\n---------------------------------------------------------------------------------------")
+    print("\n\nYour entries\n---------------------------------------------------------------------------------------")
     for array in list(entriesArray):
         print(
             f"{entriesArray.index(array) + 1}) {array[3]}/{array[0]} -> email: {array[1]}, password: {array[2]}")
     print("---------------------------------------------------------------------------------------")
 
-"""loads all the rows from the database and output them"""
+# Load passwords from the database.
 def loadPasswords():
     entriesArray = getAll()
-
-    while currentUser.entries:
-        currentUser.entries.pop()
 
     print("\nLogging in...\n")
     for array in list(entriesArray):
@@ -351,11 +381,9 @@ def loadPasswords():
             array[1]), decryptMessage(array[2]), decryptMessage(array[3]))
         
         currentUser.entries.append(dataArray)
-        
 
-    # print(f"\n\nentries{currentUser.entries}\n\n")
 
-"""gets a message and encryptes the message"""
+# Encrypt a message using PBKDF2HMAC.
 def encryptMessage(message: str):
     password = bytes(currentUser.password.encode("utf-8"))
     salt = os.urandom(32)
@@ -368,12 +396,12 @@ def encryptMessage(message: str):
     key = base64.urlsafe_b64encode(kdf.derive(password))
     f = Fernet(key)
     token = f.encrypt(bytes(message.encode("utf-8")))
-    return token + salt
+    return token.hex() + ":" + salt.hex()
 
-"""gets a message and decryptes the message"""
+# Decrypt a message using PBKDF2HMAC.
 def decryptMessage(message: str):
     password = bytes(currentUser.password.encode("utf-8"))
-    salt = bytes(message.split(b"==")[1])
+    salt = bytes.fromhex(message.split(":")[1])
     kdf = PBKDF2HMAC(
     algorithm=hashes.SHA256(),
     length=32,
@@ -382,9 +410,12 @@ def decryptMessage(message: str):
     )
     key = base64.urlsafe_b64encode(kdf.derive(password))
     f = Fernet(key)
-    start_message = f.decrypt(bytes(message.split(b":")[0]))
+    start_message = f.decrypt(bytes.fromhex(message.split(":")[0]))
 
     return start_message.decode("utf-8")
+
+
+
 
 '''Main Program'''
 if __name__ == "__main__":
