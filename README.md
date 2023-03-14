@@ -3,7 +3,7 @@
 #
  
  
- **How it works**
+ # **How it works**
  
   you need to create a _local_ account, _username_ and _password_. then you login locally using this account. 
  
