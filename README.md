@@ -10,12 +10,6 @@
  You can create multiple accounts/users, that every user will have his own password entries
  
  **account/user _password_ is hashed and entries inside those accounts is _encrypted_, inside the sqlite database**
- 
- 
- 
- 
- 
- 
- 
+ #
  🔴 **!!! WARNING !!!**
  All the user accounts and passwords entries will be saved **locally** into an sqlite database. if you **delete** the **.db** file that is located inside the **python program files**, you will lost **everything** users and their password entries 🔴
