@@ -81,7 +81,7 @@ def hashing(message: str):
     return hashed_message
 
 
-# Get a user's password.
+# Get a user s password.
 def getUserPassword(username: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -109,19 +109,8 @@ def getUserId(username: str):
     else:
         return None
 
-# Get a user's username.
-
-
-def getUserUsername(username: str):
-    connection = connectToDatabase("password_manager.db")
-    cursor = createCursor(connection)
-    result = cursor.execute(
-        "SELECT username FROM users WHERE username=:name", [username]).fetchone()
-    return result
 
 # Fetch all passwords.
-
-
 def getAll():
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -144,9 +133,8 @@ def getIds():
         FROM passwords WHERE userid=:1""", [currentUser.id]).fetchall()
     return result
 
+
 # Verify a plain password against a hash
-
-
 def compareHashPlain(hash: str, plainPassword: str):
     ph = PasswordHasher()
     if hash != None:
@@ -198,40 +186,8 @@ def checkPasswords(password: str, confirmPassword: str):
     else:
         return True
 
-# Check if a username already exists.
-
-
-def checkUsernameExists(username: str):
-    data = getUserUsername(username)
-    if data != None:
-        print("\n-----------------------------------------\nEntry with this username already exists\n-----------------------------------------\n")
-        return True
-    else:
-        return False
-
-
-def checkUsernameWebAppExists(username: str, websiteApp: str):
-    for entry in currentUser.entries:
-        if entry[0] == username and entry[3] == websiteApp:
-            print("\n---------------------------------------------------------\nEntry with this username and website/app already exists\n---------------------------------------------------------\n")
-            return True
-        else:
-            return False
-
-# Updates a row in the passwords table.
-
-
-def updateTableRow(column: str, id: str, newvalue: str):
-    connection = connectToDatabase("password_manager.db")
-    cursor = createCursor(connection)
-
-    cursor.execute(
-        f"UPDATE passwords SET {column} = ? WHERE id = ?", [newvalue, id])
-    connection.commit()
 
 # Displays the login menu.
-
-
 def login():
     username = str(input("username(required): "))
     hashedPassword = getUserPassword(username)
@@ -255,7 +211,6 @@ def login():
             currentUser.id = id
             currentUser.username = username
             currentUser.password = password
-            print("\nLogging in...\n")
             loadPasswords()
             print(
                 "\n----------------------\nLogged in successful\n----------------------\n")
@@ -275,9 +230,7 @@ def register():
     if checkEmpty(dataInput):
         menu()
     else:
-        if checkUsernameExists(username):
-            menu()
-        elif checkPasswords(password, confirmPassword) == False:
+        if checkPasswords(password, confirmPassword) == False:
             menu()
         else:
             insertRowToUsersTable(username, hashing(password))
@@ -332,13 +285,13 @@ def menu():
 
 def loggedInMenu():
     operation = str(input
-                    ("\nLogged in Menu\n-------------------\n(1) Show profile\n(2) Show password entries\n(3) Add password entry\n(4) Remove password entry\n(5) Edit Entry\n(6) Logout\nor leave empty to exit\n\nchoose an operation:"))
+                    ("\nLogged in Menu\n-------------------\n(1) Show profile\n(2) Show password entries\n(3) Add password entry\n(4) Remove password entry\n(5) Logout\nor leave empty to exit\n\nchoose an operation:"))
 
-    if operation not in ["1", "2", "3", "4", "5", "6"] and operation != "":
+    if operation not in ["1", "2", "3", "4", "5"] and operation != "":
         print("\n---------------------\nNot valid operation\n---------------------")
         loggedInMenu()
         operation = None
-    elif operation == "6":
+    elif operation == "5":
         logout()
     elif operation != "":
         if operation == "1":
@@ -349,8 +302,6 @@ def loggedInMenu():
             addEntry()
         elif operation == "4":
             removeEntry()
-        elif operation == "5":
-            editEntry()
         loggedInMenu()
 
 # Displays information about current user.
@@ -405,9 +356,7 @@ def addEntry():
     if checkEmpty(dataInput):
         loggedInMenu()
     else:
-        if checkUsernameWebAppExists(username, websiteApp):
-            loggedInMenu()
-        elif checkEmail(email) == False:
+        if checkEmail(email) == False:
             loggedInMenu()
         elif checkPasswords(password, confirmPassword) == False:
             loggedInMenu()
@@ -463,62 +412,12 @@ def showCurrentEntries():
 def loadPasswords():
     entriesArray = getAll()
 
+    print("\nLogging in...\n")
     for array in list(entriesArray):
         dataArray = (decryptMessage(array[0]), decryptMessage(
             array[1]), decryptMessage(array[2]), decryptMessage(array[3]))
 
         currentUser.entries.append(dataArray)
-
-# Edit the passwords table.
-
-
-def editEntry():
-    idList = []
-    iDs = list(getIds())
-    for id in iDs:
-        idList.append(str(id[0]))
-
-    showCurrentEntries()
-    userInputId = str(input("entry to edit: "))
-    isNotAllowed = checkNotAllowedCharacter(
-        userInputId, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ""])
-
-    if isNotAllowed:
-        print("\n\n---------------------------------------\nOne or more characters is not allowed\n---------------------------------------\n")
-        loggedInMenu()
-    elif userInputId not in idList:
-        if userInputId != "":
-            print("\n\n------------------\nInvalid entry\n------------------\n")
-    else:
-        cridentialToEdit = str(input(
-            "\navailable cridentials to edit\n------------------------------\n(1) Email\n(2) Password\nChoose cridential: "))
-        if cridentialToEdit not in ["1", "2", ""]:
-            print("\n\n------------------\nInvalid choice\n------------------\n")
-            loggedInMenu()
-        else:
-            if cridentialToEdit == "1":
-                cridentialInput = str(input("new email: "))
-                if len(cridentialInput) > 0:
-                    if checkEmail(cridentialInput):
-                        updateTableRow("email", userInputId,
-                                       encryptMessage(cridentialInput))
-                        currentUser.entries = []
-                        loadPasswords()
-                        print(
-                            "\n\n---------------------------------------\nEntry edited successfully\n---------------------------------------\n")
-
-            elif cridentialToEdit == "2":
-                cridentialInput = str(getpass("new password: "))
-                if len(cridentialInput) > 0:
-                    cridentialInputConfirm = str(
-                        getpass("new password confirm: "))
-                    if checkPasswords(cridentialInput, cridentialInputConfirm):
-                        updateTableRow("password", userInputId,
-                                       encryptMessage(cridentialInput))
-                        currentUser.entries = []
-                        loadPasswords()
-                        print(
-                            "\n\n---------------------------------------\nEntry edited successfully\n---------------------------------------\n")
 
 
 # Encrypt a message using PBKDF2HMAC.
