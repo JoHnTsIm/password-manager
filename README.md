@@ -6,7 +6,7 @@
  
   you need to create a _local_ account, _username_ and _password_. then you login locally using this account. 
  
- Then you can _see_, _add_, _remove_ password entries. 
+ Then you can _see_, _add_, _remove_, _edit_ password entries. 
  
  You can create multiple accounts/users, that every user will have his own password entries
  
