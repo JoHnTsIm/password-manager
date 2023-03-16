@@ -95,8 +95,6 @@ def getUserPassword(username: str):
         return None
 
 # Returns the id of the user with the given username
-
-
 def getUserId(username: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -110,8 +108,6 @@ def getUserId(username: str):
         return None
 
 # Get a user's username.
-
-
 def getUserUsername(username: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -120,8 +116,6 @@ def getUserUsername(username: str):
     return result
 
 # Fetch all passwords.
-
-
 def getAll():
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -133,8 +127,6 @@ def getAll():
     return result
 
 # Returns a list of password ids.
-
-
 def getIds():
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -145,8 +137,6 @@ def getIds():
     return result
 
 # Verify a plain password against a hash
-
-
 def compareHashPlain(hash: str, plainPassword: str):
     ph = PasswordHasher()
     if hash != None:
@@ -156,8 +146,6 @@ def compareHashPlain(hash: str, plainPassword: str):
             print(f"ERROR: {error}")
 
 # Check if a list of inputs is empty.
-
-
 def checkEmpty(inputs: list):
     for input in inputs:
         if len(input) == 0:
@@ -168,8 +156,6 @@ def checkEmpty(inputs: list):
         return False
 
 # Returns a boolean indicating if a character is allowed in a string.
-
-
 def checkNotAllowedCharacter(string: str, allowedChars: list):
     for char in string:
         if char not in allowedChars:
@@ -178,8 +164,6 @@ def checkNotAllowedCharacter(string: str, allowedChars: list):
             return False
 
 # Check if an email address is valid.
-
-
 def checkEmail(email: str):
     regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b'
     if (re.fullmatch(regex, email)):
@@ -199,8 +183,6 @@ def checkPasswords(password: str, confirmPassword: str):
         return True
 
 # Check if a username already exists.
-
-
 def checkUsernameExists(username: str):
     data = getUserUsername(username)
     if data != None:
@@ -219,8 +201,6 @@ def checkUsernameWebAppExists(username: str, websiteApp: str):
             return False
 
 # Updates a row in the passwords table.
-
-
 def updateTableRow(column: str, id: str, newvalue: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -230,8 +210,6 @@ def updateTableRow(column: str, id: str, newvalue: str):
     connection.commit()
 
 # Displays the login menu.
-
-
 def login():
     username = str(input("username(required): "))
     hashedPassword = getUserPassword(username)
@@ -262,8 +240,6 @@ def login():
             loggedInMenu()
 
 # Registers a new user.
-
-
 def register():
     username = str(input("username(required): "))
     # str(input("password(required): "))
@@ -285,8 +261,6 @@ def register():
             menu()
 
 # Logout the current user.
-
-
 def logout():
     currentUser.id = None
     currentUser.username = None
@@ -296,8 +270,6 @@ def logout():
     menu()
 
 # Inserts a row to the users table.
-
-
 def insertRowToUsersTable(username: str, password: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -311,8 +283,6 @@ def insertRowToUsersTable(username: str, password: str):
         print(f"ERROR: {error}")
 
 # Displays the pre - login menu.
-
-
 def menu():
     operation = str(input
                     ("\nPre-login Menu\n-------------------\n(1) Login\n(2) Sign up\nor leave empty to exit\n\nchoose an operation:"))
@@ -328,8 +298,6 @@ def menu():
             register()
 
 # Logs in then displays the logged in menu.
-
-
 def loggedInMenu():
     operation = str(input
                     ("\nLogged in Menu\n-------------------\n(1) Show profile\n(2) Show password entries\n(3) Add password entry\n(4) Remove password entry\n(5) Edit Entry\n(6) Logout\nor leave empty to exit\n\nchoose an operation:"))
@@ -354,16 +322,12 @@ def loggedInMenu():
         loggedInMenu()
 
 # Displays information about current user.
-
-
 def showUserInfo():
     print("\n\nYour profile\n---------------------------------------------------")
     print(f"username: {currentUser.username}")
     print("---------------------------------------------------\n")
 
 # Inserts a row to passwords.
-
-
 def insertRowToPasswords(username: str, email: str, password: str, websiteApp: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -377,8 +341,6 @@ def insertRowToPasswords(username: str, email: str, password: str, websiteApp: s
         print(f"ERROR: {error}")
 
 # Removes a row from passwords.
-
-
 def removeRowFromEntries(id: str):
     connection = connectToDatabase("password_manager.db")
     cursor = createCursor(connection)
@@ -391,8 +353,6 @@ def removeRowFromEntries(id: str):
         print(f"ERROR: {error}")
 
 # adds new entry to the passwords.
-
-
 def addEntry():
     username = str(input("username: "))
     email = str(input("email(required): "))
@@ -447,8 +407,6 @@ def removeEntry():
         print("\n\n---------------------------------------\nEntry removed successfully\n---------------------------------------\n")
 
 # Display the current user entries.
-
-
 def showCurrentEntries():
     entriesArray = currentUser.entries
     print("\n\nYour entries\n---------------------------------------------------------------------------------------")
@@ -458,8 +416,6 @@ def showCurrentEntries():
     print("---------------------------------------------------------------------------------------")
 
 # Load passwords from the database.
-
-
 def loadPasswords():
     entriesArray = getAll()
 
@@ -470,8 +426,6 @@ def loadPasswords():
         currentUser.entries.append(dataArray)
 
 # Edit the passwords table.
-
-
 def editEntry():
     idList = []
     iDs = list(getIds())
@@ -537,8 +491,6 @@ def encryptMessage(message: str):
     return token.hex() + ":" + salt.hex()
 
 # Decrypt a message using PBKDF2HMAC.
-
-
 def decryptMessage(message: str):
     password = bytes(currentUser.password.encode("utf-8"))
     salt = bytes.fromhex(message.split(":")[1])
